@@ -203,8 +203,8 @@ function Library:CreateWindow(Settings)
     UserInputService.InputChanged:Connect(function(input)
         if resDragging and input == resDragInput and not Window.IsMaximized then
             local delta = input.Position - resDragStart
-            local newW = resType == "Both" or resType == "X" and math.clamp(resStartSize.X + delta.X, Config.Window.MinSize.X, 1500) or resStartSize.X
-            local newH = resType == "Both" or resType == "Y" and math.clamp(resStartSize.Y + delta.Y, Config.Window.MinSize.Y, 1200) or resStartSize.Y
+            local newW = (resType == "Both" or resType == "X") and math.clamp(resStartSize.X + delta.X, Config.Window.MinSize.X, 1500) or resStartSize.X
+            local newH = (resType == "Both" or resType == "Y") and math.clamp(resStartSize.Y + delta.Y, Config.Window.MinSize.Y, 1200) or resStartSize.Y
             MainFrame.Size = UDim2.fromOffset(newW, newH) Config.Window.Width, Config.Window.Height = newW, newH
         end
     end)

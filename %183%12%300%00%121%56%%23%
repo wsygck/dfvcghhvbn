@@ -186,64 +186,28 @@ function Library:CreateWindow(Settings)
         TweenService:Create(DialogFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Size = UDim2.fromOffset(220, 110), GroupTransparency = 0 }):Play()
     end)
 
-
-    -- ==============================================================================
-    -- ✨ 【丝滑缩放引擎重构】：解决抖动与布尔值报错，增加严格计算阀值
-    -- ==============================================================================
     local resDragging, resType, resStartSize, resDragStart, resDragInput = false, "", nil, nil, nil
-    
-    -- 锁定启动时的默认大小，作为阀值计算的基础锚点
-    local BaseWidth = Config.Window.Width
-    local BaseHeight = Config.Window.Height
-    local MinW = BaseWidth - 30 -- 最小宽度
-    local MaxW = BaseWidth + 60 -- 最大宽度
-    local MinH = BaseHeight - 30 -- 最小高度
-    local MaxH = BaseHeight + 60 -- 最大高度
-
     local function CreateResizeHandle(name, size, pos, anchor, rType)
-        local handle = Instance.new("TextButton", MainFrame) 
-        handle.Name = name handle.Size = size handle.Position = pos 
-        handle.AnchorPoint = anchor handle.BackgroundTransparency = 1 
-        handle.Text = "" handle.ZIndex = 100
-        
+        local handle = Instance.new("TextButton", MainFrame) handle.Name = name handle.Size = size handle.Position = pos handle.AnchorPoint = anchor handle.BackgroundTransparency = 1 handle.Text = "" handle.ZIndex = 100
         handle.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 resDragging = true resType = rType resStartSize = MainFrame.AbsoluteSize resDragStart = input.Position
                 input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then resDragging = false end end)
             end
         end)
-        handle.InputChanged:Connect(function(input) 
-            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then resDragInput = input end 
-        end)
+        handle.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then resDragInput = input end end)
     end
-    
     CreateResizeHandle("ResizeBottom", UDim2.new(1, -16, 0, 10), UDim2.new(0, 0, 1, 0), Vector2.new(0, 1), "Y")
     CreateResizeHandle("ResizeRight", UDim2.new(0, 10, 1, -16), UDim2.new(1, 0, 0, 0), Vector2.new(1, 0), "X")
     CreateResizeHandle("ResizeCorner", UDim2.new(0, 16, 0, 16), UDim2.new(1, 0, 1, 0), Vector2.new(1, 1), "Both")
-    
     UserInputService.InputChanged:Connect(function(input)
         if resDragging and input == resDragInput and not Window.IsMaximized then
             local delta = input.Position - resDragStart
-            
-            -- 完全摒弃 and/or 混合判断，采用稳定的 if 赋值流，绝不会产生 true/false
-            local newW = resStartSize.X
-            local newH = resStartSize.Y
-            
-            if resType == "X" or resType == "Both" then
-                newW = math.clamp(resStartSize.X + delta.X, MinW, MaxW)
-            end
-            
-            if resType == "Y" or resType == "Both" then
-                newH = math.clamp(resStartSize.Y + delta.Y, MinH, MaxH)
-            end
-            
-            MainFrame.Size = UDim2.fromOffset(newW, newH) 
-            Config.Window.Width = newW
-            Config.Window.Height = newH
+            local newW = resType == "Both" or resType == "X" and math.clamp(resStartSize.X + delta.X, Config.Window.MinSize.X, 1500) or resStartSize.X
+            local newH = resType == "Both" or resType == "Y" and math.clamp(resStartSize.Y + delta.Y, Config.Window.MinSize.Y, 1200) or resStartSize.Y
+            MainFrame.Size = UDim2.fromOffset(newW, newH) Config.Window.Width, Config.Window.Height = newW, newH
         end
     end)
-    -- ==============================================================================
-
 
     local ColorDialog = Instance.new("CanvasGroup", MainFrame)
     ColorDialog.Size = UDim2.fromOffset(Config.ColorPicker.DialogWidth, Config.ColorPicker.DialogHeight) 
@@ -693,4 +657,3 @@ end
 
 -- ✨ 最重要的一步：将 Library 抛出，供主脚本调用
 return Library
-}
